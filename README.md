@@ -46,6 +46,8 @@ The component receives a normalized `PromoCallout` model rather than the raw CMS
 
 This keeps the reusable component independent from the CMS-specific data shape.
 
+The project uses an adapter layer to validate and normalize external CMS content before it reaches the shared component.
+
 ---
 
 ## Content Shape Decision
@@ -59,12 +61,12 @@ The adapter is responsible for:
 * Extracting the CMS system ID
 * Normalizing the CMS fields
 * Validating required content
-* Validating the supported `tone` values
+* Validating supported values at the CMS boundary
 * Applying defaults
-* Returning `null` for invalid content
-* Warning developers when required content is missing
+* Returning `null` for invalid or incomplete content
+* Warning developers when required content is missing or invalid
 
-This creates a clear boundary between content validation and presentation.
+This creates a clear boundary between external content validation and UI presentation.
 
 If the CMS provider, schema, or API changes in the future, the adapter can change without requiring the shared UI component to know about those details.
 
@@ -117,7 +119,7 @@ Parent Application
 
 The component therefore does not internally maintain a permanent "dismissed" state.
 
-In the demo application, the parent handles the event by setting a local dismissal state:
+In the demo application, the parent handles the event by setting local dismissal state:
 
 ```text
 dismissed.emit("promo-cc-cashback-2026-q3")
@@ -210,6 +212,8 @@ Loading
    ▼
 Skeleton UI
 ```
+
+The loading state uses `role="status"` so assistive technology can identify the loading state.
 
 ### Valid
 
@@ -317,7 +321,7 @@ I interpreted `tone` as controlling the visual emphasis of the callout itself, s
 
 ## Responsive Behavior
 
-The component uses CSS Grid to support the desktop and mobile layouts described in the design specification.
+The component uses Flexbox for its primary layout.
 
 ### Desktop
 
@@ -331,17 +335,23 @@ The layout consists of:
 └────────────────────────────────────────────┘
 ```
 
-The grid contains three primary columns:
+The main layout uses:
 
 ```text
 Icon | Flexible Content | Dismiss
 ```
 
-The CTA remains within the content column below the body.
+The content area expands to use the available space, while the icon and dismiss control remain fixed-size elements.
+
+The title uses a single-line treatment with ellipsis on larger viewports so long content does not visually break the card.
 
 ### Narrow Viewports
 
-At the mobile breakpoint, the CTA spans the full width of the card and becomes its own row:
+At the mobile breakpoint:
+
+* The card uses tighter padding.
+* The title is allowed to wrap.
+* The CTA becomes a full-width block below the body content.
 
 ```text
 ┌─────────────────────────────┐
@@ -352,15 +362,7 @@ At the mobile breakpoint, the CTA spans the full width of the card and becomes i
 └─────────────────────────────┘
 ```
 
-This is implemented using:
-
-```scss
-grid-column: 1 / -1;
-```
-
-This allows the CTA to span across all grid columns without duplicating the CTA markup.
-
-The title also allows wrapping on narrow screens to prevent excessive truncation.
+This allows the CTA to remain easy to activate on smaller screens while preserving the overall card structure.
 
 ---
 
@@ -466,6 +468,8 @@ The test suite covers:
 * Loading state
 * Missing content fail-closed behavior
 * Feature flag disabled behavior
+* CTA rendering with complete CTA content
+* CTA omission when the label or URL is missing
 * Dismiss event emitting the correct entry ID
 
 ### Accessibility-focused tests
@@ -473,10 +477,13 @@ The test suite covers:
 * Use of `<aside>` for supplementary content
 * Accessible name on the dismiss button
 * Decorative icon hidden from assistive technology
+* Keyboard-focusable native controls
 
 ### Adapter tests
 
 * Valid CMS content mapping
+* Promotional content mapping
+* Informational content mapping
 * Missing required title returns `null`
 * Missing required content logs a warning containing the entry ID
 * Invalid tone returns `null`
@@ -495,11 +502,9 @@ If this were a real design handoff, I would clarify:
 3. Should the icon be selected from a controlled icon set rather than accepting arbitrary icon names?
 4. What should happen if the title exceeds one line on desktop?
 5. Is truncation with an ellipsis the intended behavior for long titles?
-6. What is the exact maximum width or line length for the title and body?
-7. What is the expected behavior at tablet and intermediate breakpoints?
-8. Is `<aside>` the desired semantic treatment for every usage of this component, or could some placements require a different semantic structure?
-9. Should the card have a visible hover or interaction state?
-10. What are the exact focus styles from the design system?
+6. What are the expected tablet and intermediate breakpoints?
+7. Is `<aside>` the desired semantic treatment for every usage of this component, or could some placements require a different semantic structure?
+8. What are the exact focus styles from the design system?
 
 ---
 
@@ -509,17 +514,16 @@ I would clarify:
 
 1. Which fields are required in the CMS schema?
 2. Should `tone` be validated by the CMS itself, or should the frontend always validate it?
-3. What should happen if the CMS provides an invalid tone?
-4. Are CTA labels and URLs always provided together?
-5. Should a CTA support both internal and external URLs?
-6. If external URLs are supported, should they open in a new tab?
-7. Should CTA links include tracking or analytics metadata?
-8. Should dismissals persist across sessions?
-9. If dismissal persists, is it per member, per device, or per browser?
-10. How long should a dismissal remain effective?
-11. Should a new version of the same promotion reset a previous dismissal?
-12. Should dismissal events be tracked for analytics?
-13. Are there A/B testing requirements that affect dismissal behavior or content rendering?
+3. Are CTA labels and URLs always provided together?
+4. Should a CTA support both internal and external URLs?
+5. If external URLs are supported, should they open in a new tab?
+6. Should CTA links include tracking or analytics metadata?
+7. Should dismissals persist across sessions?
+8. If dismissal persists, is it per member, per device, or per browser?
+9. How long should a dismissal remain effective?
+10. Should a new version of the same promotion reset a previous dismissal?
+11. Should dismissal events be tracked for analytics?
+12. Are there A/B testing requirements that affect dismissal behavior or content rendering?
 
 ---
 
@@ -534,7 +538,7 @@ ChatGPT was used to:
 * Explain Angular 20+ / Angular 21 signal-based `input()` and `output()` APIs
 * Explain Angular standalone component conventions
 * Help structure the component architecture
-* Suggest a CMS adapter pattern
+* Suggest and explain a CMS adapter pattern
 * Generate initial TypeScript interfaces and component scaffolding
 * Assist with Angular template syntax using native control flow
 * Assist with SCSS and responsive styling
@@ -556,7 +560,8 @@ Examples include:
 * Using an adapter for CMS validation and normalization
 * Keeping dismissal state controlled by the consuming application
 * Using semantic HTML and accessible controls
-* Using CSS Grid to move the CTA to a full-width row on narrow viewports
+* Using Flexbox for the primary card layout and a responsive full-width CTA
+* Using semantic CSS custom properties instead of hardcoded color values
 
 ### What was reviewed or changed
 
@@ -568,10 +573,11 @@ Examples include:
 * Replacing `toHaveClass()` assertions when the available Vitest setup did not support that matcher.
 * Updating the generated Angular application test after replacing the default Angular starter template.
 * Choosing parent-controlled dismissal state to support future persistence and experimentation.
-* Moving the dismissal live region into the parent application so the announcement remains in the DOM after the callout is removed.
+* Keeping the dismissal live region in the parent application so the announcement remains available after the callout is removed.
 * Choosing `<aside>` instead of `role="alert"` because the callout represents supplementary promotional or informational content rather than urgent information.
 * Using a simulated design-token layer because the actual production tokens were not provided.
-* Using CSS Grid to satisfy the responsive requirement without duplicating CTA markup.
+* Adjusting the responsive implementation to use the Flexbox layout required by the implemented component.
+* Reviewing and fixing generated code and tests when they did not match the actual application behavior.
 
 AI was used as a pair-programming and learning tool. Generated code was reviewed, tested, and adjusted to fit the requirements and the implementation decisions documented above.
 
@@ -601,4 +607,10 @@ Run tests:
 
 ```bash
 npm test
+```
+
+Build the application:
+
+```bash
+npm run build
 ```
