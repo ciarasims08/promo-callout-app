@@ -1,0 +1,61 @@
+@if (featureEnabled()) {
+  @if (loading()) {
+    <div
+      class="promo-callout promo-callout--loading"
+      role="status"
+      aria-live="polite"
+      aria-label="Loading promotional message"
+    >
+      <div class="skeleton skeleton--title"></div>
+      <div class="skeleton skeleton--body"></div>
+      <div class="skeleton skeleton--cta"></div>
+    </div>
+  } @else if (content(); as promo) {
+    <aside
+      class="promo-callout"
+      [class.promo-callout--info]="promo.tone === 'info'"
+      [class.promo-callout--promo]="promo.tone === 'promo'"
+    >
+      @if (promo.iconName) {
+        <span
+          class="promo-callout__icon"
+          aria-hidden="true"
+        >
+          {{ promo.iconName }}
+        </span>
+      }
+
+      <div class="promo-callout__content">
+        <h2 class="promo-callout__title">
+          {{ promo.title }}
+        </h2>
+
+        @if (promo.body) {
+          <p class="promo-callout__body">
+            {{ promo.body }}
+          </p>
+        }
+
+        @if (promo.ctaLabel && promo.ctaUrl) {
+          <a
+            class="promo-callout__cta"
+            [href]="promo.ctaUrl"
+          >
+            {{ promo.ctaLabel }}
+          </a>
+        }
+      </div>
+
+      @if (promo.dismissible) {
+        <button
+          type="button"
+          class="promo-callout__dismiss"
+          aria-label="Dismiss promotional message"
+          (click)="onDismiss()"
+        >
+          ×
+        </button>
+      }
+    </aside>
+  }
+}
